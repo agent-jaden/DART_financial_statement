@@ -12,17 +12,16 @@ from bs4 import BeautifulSoup
 import re
 import xlrd
 import fix_yahoo_finance as yf
-#from pandas_datareader import data
 import pandas_datareader
 import numpy as np
 import matplotlib.pyplot as plt
 
-#
+# Scrape value
 def find_value(text, unit):
 	return int(text.replace(" ","").replace("△","-").replace("(-)","-").replace("(","-").replace(")","").replace(",","").replace("=",""))/unit
 
 # Draw figure of cashflows.
-def draw_figure(income_list, income_list2, year_list, op_cashflow_list, fcf_list, div_list, stock_close):
+def draw_cashflow_figure(income_list, income_list2, year_list, op_cashflow_list, fcf_list, div_list, stock_close):
 	
 	for i in range(len(income_list)):
 		if income_list[i] == 0.0:
@@ -45,8 +44,24 @@ def draw_figure(income_list, income_list2, year_list, op_cashflow_list, fcf_list
 	plt.legend(loc=4)
 	plt.show()
 
+# Draw figure of net income & assets.
+def draw_corp_history(year_list, asset_sum_list, liability_sum_list, equity_sum_list, sales_list, op_income_list, net_income_list):
+	
+	fig, ax1 = plt.subplots()
+
+	ax1.plot(year_list, equity_sum_list, label="Equity", color='r', marker='D')
+	ax1.plot(year_list, asset_sum_list, label="Asset", color='y', marker='D')
+	ax1.plot(year_list, liability_sum_list, label="Liability", color='b', marker='D')
+	ax1.plot(year_list, sales_list, label="Sales", color='g', marker='D')
+	ax1.plot(year_list, op_income_list, label="Op income", color='magenta', marker='D')
+	ax1.plot(year_list, net_income_list, label="Net income", color='c', marker='D')
+	ax1.set_xlabel("YEAR")
+	plt.legend(loc=2)
+	plt.show()
+
+
 # Write financial statements to Excel file.
-def write_excel_file(workbook_name, dart_div_list, cashflow_list, balance_sheet_list, income_statement_list, corp, stock_code, stock_cat):
+def write_excel_file(workbook_name, dart_post_list, cashflow_list, balance_sheet_list, income_statement_list, corp, stock_code, stock_cat):
 	# Write an Excel file
 
 	#workbook = xlsxwriter.Workbook(workbook_name)
@@ -116,12 +131,12 @@ def write_excel_file(workbook_name, dart_div_list, cashflow_list, balance_sheet_
 	worksheet_result.write(0, 32, "기초현금 및 현금성자산", filter_format)
 	worksheet_result.write(0, 33, "기말현금 및 현금성자산", filter_format)
 
-	for k in range(len(dart_div_list)):
-		worksheet_result.write(k+1,0, dart_div_list[k][0], num2_format)
-		worksheet_result.write(k+1,1, dart_div_list[k][1], num2_format)
-		worksheet_result.write(k+1,2, dart_div_list[k][2], num2_format)
-		worksheet_result.write(k+1,3, dart_div_list[k][3], num2_format)
-		worksheet_result.write(k+1,4, dart_div_list[k][4], num2_format)
+	for k in range(len(dart_post_list)):
+		worksheet_result.write(k+1,0, dart_post_list[k][0], num2_format)
+		worksheet_result.write(k+1,1, dart_post_list[k][1], num2_format)
+		worksheet_result.write(k+1,2, dart_post_list[k][2], num2_format)
+		worksheet_result.write(k+1,3, dart_post_list[k][3], num2_format)
+		worksheet_result.write(k+1,4, dart_post_list[k][4], num2_format)
 		worksheet_result.write(k+1,5, cashflow_list[k]	['year']					, num2_format)
 		worksheet_result.write(k+1,6, cashflow_list[k]	['op_cashflow']				, num2_format)
 		worksheet_result.write(k+1,7, cashflow_list[k]	['op_cashflow_sub1']		, num2_format)
@@ -233,8 +248,8 @@ def write_excel_file(workbook_name, dart_div_list, cashflow_list, balance_sheet_
 				worksheet_cashflow.write(7, j, cashflow_list[k]['invest_cashflow_sub1']		, num2_format)
 				worksheet_cashflow.write(8, j, cashflow_list[k]['invest_cashflow_sub2']		, num2_format)
 				worksheet_cashflow.write(9, j, cashflow_list[k]['invest_cashflow_sub3']		, num2_format)
-				worksheet_cashflow.write(10, j, cashflow_list[k]['invest_cashflow_sub4']		, num2_format)
-				worksheet_cashflow.write(11, j, cashflow_list[k]['invest_cashflow_sub5']		, num2_format)
+				worksheet_cashflow.write(10, j, cashflow_list[k]['invest_cashflow_sub4']	, num2_format)
+				worksheet_cashflow.write(11, j, cashflow_list[k]['invest_cashflow_sub5']	, num2_format)
 				worksheet_cashflow.write(12, j, cashflow_list[k]['invest_cashflow_sub6']	, num2_format)
 				worksheet_cashflow.write(13, j, cashflow_list[k]['invest_cashflow_sub7']	, num2_format)
 				worksheet_cashflow.write(14, j, cashflow_list[k]['invest_cashflow_sub8']	, num2_format)
@@ -256,6 +271,14 @@ def write_excel_file(workbook_name, dart_div_list, cashflow_list, balance_sheet_
 				worksheet_cashflow.write(30, j, cashflow_list[k]['end_cash']				, num2_format)
 				worksheet_cashflow.write(31, j, cashflow_list[k]['net_income']				, num2_format)
 				worksheet_cashflow.write(32, j, fcf, num2_format)
+				
+				year_list[-1] = cashflow_list[k]['year']
+				op_cashflow_list[-1] = cashflow_list[k]['op_cashflow']
+				fcf_list[-1] = fcf
+				income_list[-1] = cashflow_list[k]['op_cashflow_sub2']
+				income_list2[-1] = cashflow_list[k]['net_income']
+				div_list[-1] = abs(cashflow_list[k]['fin_cashflow_sub2'])
+				cash_equivalents_list[-1] = cashflow_list[k]['end_cash']
 			else:
 				worksheet_cashflow.write(0, j+1, str(cashflow_list[k]['year'])+"년")
 				worksheet_cashflow.write(1, j+1, cashflow_list[k]['op_cashflow']			, num2_format)
@@ -300,7 +323,7 @@ def write_excel_file(workbook_name, dart_div_list, cashflow_list, balance_sheet_
 				cash_equivalents_list.append(cashflow_list[k]['end_cash'])
 				j = j+1
 		
-		prev_year = cashflow_list[k]['year']
+			prev_year = cashflow_list[k]['year']
 
 	# Balance sheet
 	balance_sheet_list.reverse() 
@@ -308,7 +331,11 @@ def write_excel_file(workbook_name, dart_div_list, cashflow_list, balance_sheet_
 	
 	prev_year = 0
 	j = 0
-	
+
+	asset_sum_list = []
+	liability_sum_list = []
+	equity_sum_list = []
+
 	worksheet_bs.set_column('A:A', 30)
 	worksheet_bs.write(0, 0, "결산년도", filter_format)
 	worksheet_bs.write(1, 0, "유동자산", filter_format)
@@ -335,38 +362,46 @@ def write_excel_file(workbook_name, dart_div_list, cashflow_list, balance_sheet_
 	worksheet_bs.write(22, 0, "자본총계", filter_format)
 	
 	for k in range(len(balance_sheet_list)):
-		# Overwirting
-		if prev_year == balance_sheet_list[k]['year']:
-			w = j
-		else:
-			w = j+1
+		if balance_sheet_list[k]['asset_current_sub1'] != "FINDING LINE NUMBER ERROR":
+			# Overwirting
+			if prev_year == balance_sheet_list[k]['year']:
+				asset_sum_list[-1] = balance_sheet_list[k]['asset_sum']
+				liability_sum_list[-1] = balance_sheet_list[k]['liability_sum']
+				equity_sum_list[-1] = balance_sheet_list[k]['equity_sum']
+				w = j
+			else:
+				asset_sum_list.append(balance_sheet_list[k]['asset_sum'])
+				liability_sum_list.append(balance_sheet_list[k]['liability_sum'])
+				equity_sum_list.append(balance_sheet_list[k]['equity_sum'])
+				w = j+1
 
-		worksheet_bs.write(0, w, str(balance_sheet_list[k]['year'])+"년")
-		worksheet_bs.write(1, w, balance_sheet_list[k]['asset_current']				, num2_format)
-		worksheet_bs.write(2, w, balance_sheet_list[k]['asset_current_sub1']			, num2_format)
-		worksheet_bs.write(3, w, balance_sheet_list[k]['asset_current_sub2']			, num2_format)
-		worksheet_bs.write(4, w, balance_sheet_list[k]['asset_current_sub3']			, num2_format)
-		worksheet_bs.write(5, w, balance_sheet_list[k]['asset_non_current']			, num2_format)
-		worksheet_bs.write(6, w, balance_sheet_list[k]['asset_non_current_sub1']		, num2_format)
-		worksheet_bs.write(7, w, balance_sheet_list[k]['asset_non_current_sub2']		, num2_format)
-		worksheet_bs.write(8, w, balance_sheet_list[k]['asset_sum']					, num2_format)
-		worksheet_bs.write(9, w, balance_sheet_list[k]['liability_current']			, num2_format)
-		worksheet_bs.write(10, w, balance_sheet_list[k]['liability_current_sub1']		, num2_format)
-		worksheet_bs.write(11, w, balance_sheet_list[k]['liability_current_sub2']		, num2_format)
-		worksheet_bs.write(12, w, balance_sheet_list[k]['liability_current_sub3']		, num2_format)
-		worksheet_bs.write(13, w, balance_sheet_list[k]['liability_non_current']		, num2_format)
-		worksheet_bs.write(14, w, balance_sheet_list[k]['liability_non_current_sub1']	, num2_format)
-		worksheet_bs.write(15, w, balance_sheet_list[k]['liability_non_current_sub2']	, num2_format)
-		worksheet_bs.write(16, w, balance_sheet_list[k]['liability_non_current_sub3']	, num2_format)
-		worksheet_bs.write(17, w, balance_sheet_list[k]['liability_non_current_sub4']	, num2_format)
-		worksheet_bs.write(18, w, balance_sheet_list[k]['liability_sum']				, num2_format)
-		worksheet_bs.write(19, w, balance_sheet_list[k]['equity']						, num2_format)
-		worksheet_bs.write(20, w, balance_sheet_list[k]['equity_sub1']				, num2_format)
-		worksheet_bs.write(21, w, balance_sheet_list[k]['equity_sub2']				, num2_format)
-		worksheet_bs.write(22, w, balance_sheet_list[k]['equity_sum']					, num2_format)
-		
-		j = j+1
-		prev_year = balance_sheet_list[k]['year']
+			worksheet_bs.write(0, w, str(balance_sheet_list[k]['year'])+"년")
+			worksheet_bs.write(1, w, balance_sheet_list[k]['asset_current']					, num2_format)
+			worksheet_bs.write(2, w, balance_sheet_list[k]['asset_current_sub1']			, num2_format)
+			worksheet_bs.write(3, w, balance_sheet_list[k]['asset_current_sub2']			, num2_format)
+			worksheet_bs.write(4, w, balance_sheet_list[k]['asset_current_sub3']			, num2_format)
+			worksheet_bs.write(5, w, balance_sheet_list[k]['asset_non_current']				, num2_format)
+			worksheet_bs.write(6, w, balance_sheet_list[k]['asset_non_current_sub1']		, num2_format)
+			worksheet_bs.write(7, w, balance_sheet_list[k]['asset_non_current_sub2']		, num2_format)
+			worksheet_bs.write(8, w, balance_sheet_list[k]['asset_sum']						, num2_format)
+			worksheet_bs.write(9, w, balance_sheet_list[k]['liability_current']				, num2_format)
+			worksheet_bs.write(10, w, balance_sheet_list[k]['liability_current_sub1']		, num2_format)
+			worksheet_bs.write(11, w, balance_sheet_list[k]['liability_current_sub2']		, num2_format)
+			worksheet_bs.write(12, w, balance_sheet_list[k]['liability_current_sub3']		, num2_format)
+			worksheet_bs.write(13, w, balance_sheet_list[k]['liability_non_current']		, num2_format)
+			worksheet_bs.write(14, w, balance_sheet_list[k]['liability_non_current_sub1']	, num2_format)
+			worksheet_bs.write(15, w, balance_sheet_list[k]['liability_non_current_sub2']	, num2_format)
+			worksheet_bs.write(16, w, balance_sheet_list[k]['liability_non_current_sub3']	, num2_format)
+			worksheet_bs.write(17, w, balance_sheet_list[k]['liability_non_current_sub4']	, num2_format)
+			worksheet_bs.write(18, w, balance_sheet_list[k]['liability_sum']				, num2_format)
+			worksheet_bs.write(19, w, balance_sheet_list[k]['equity']						, num2_format)
+			worksheet_bs.write(20, w, balance_sheet_list[k]['equity_sub1']					, num2_format)
+			worksheet_bs.write(21, w, balance_sheet_list[k]['equity_sub2']					, num2_format)
+			worksheet_bs.write(22, w, balance_sheet_list[k]['equity_sum']					, num2_format)
+			
+			if prev_year != balance_sheet_list[k]['year']:
+				j = j+1
+			prev_year = balance_sheet_list[k]['year']
 
 	# Income statement
 	income_statement_list.reverse() 
@@ -374,11 +409,15 @@ def write_excel_file(workbook_name, dart_div_list, cashflow_list, balance_sheet_
 
 	prev_year = 0
 	j = 0
+
+	sales_list = []
+	op_income_list = []
+	net_income_list = []
 	
 	worksheet_income.set_column('A:A', 30)
 	worksheet_income.write(0, 0, "결산년도", filter_format)
-	worksheet_income.write(1, 0, "매출액", filter_format)
-	worksheet_income.write(2, 0, "매출원가", filter_format2)
+	worksheet_income.write(1, 0, "매출액(영업수익)", filter_format)
+	worksheet_income.write(2, 0, "매출원가(영업비용)", filter_format2)
 	worksheet_income.write(3, 0, "매출총이익", filter_format2)
 	worksheet_income.write(4, 0, "판매비와관리비", filter_format2)
 	worksheet_income.write(5, 0, "영업이익", filter_format)
@@ -394,59 +433,66 @@ def write_excel_file(workbook_name, dart_div_list, cashflow_list, balance_sheet_
 	worksheet_income.write(15, 0, "기본주당이익", filter_format)
 
 	for k in range(len(income_statement_list)):
-		# Overwirting
-		if prev_year == income_statement_list[k]['year']:
-			w = j
-		else:
-			w = j+1
+		if income_statement_list[k]['sales_sub1'] != "FINDING LINE NUMBER ERROR":
+			# Overwirting
+			if prev_year == income_statement_list[k]['year']:
+				w = j
+				sales_list[-1]			= income_statement_list[k]['sales']
+				op_income_list[-1]		= income_statement_list[k]['op_income']
+				net_income_list[-1]		= income_statement_list[k]['net_income']
+			else:
+				sales_list.append(income_statement_list[k]['sales'])
+				op_income_list.append(income_statement_list[k]['op_income'])
+				net_income_list.append(income_statement_list[k]['net_income'])
+				w = j+1
 
-		worksheet_income.write(0, w, str(income_statement_list[k]['year'])+"년")
-		worksheet_income.write(1, w, income_statement_list[k] ['sales']			, num2_format)
-		worksheet_income.write(2, w, income_statement_list[k] ['sales_sub1']		, num2_format)
-		worksheet_income.write(3, w, income_statement_list[k] ['sales_sub2']		, num2_format)
-		worksheet_income.write(4, w, income_statement_list[k] ['sales_sub3']		, num2_format)
-		worksheet_income.write(5, w, income_statement_list[k] ['op_income']		, num2_format)
-		worksheet_income.write(6, w, income_statement_list[k] ['op_income_sub1']	, num2_format)
-		worksheet_income.write(7, w, income_statement_list[k] ['op_income_sub2']	, num2_format)
-		worksheet_income.write(8, w, income_statement_list[k] ['op_income_sub3']	, num2_format)
-		worksheet_income.write(9, w, income_statement_list[k] ['op_income_sub4']	, num2_format)
-		worksheet_income.write(10, w, income_statement_list[k]['op_income_sub6']	, num2_format)
-		worksheet_income.write(11, w, income_statement_list[k]['op_income_sub7']	, num2_format)
-		worksheet_income.write(12, w, income_statement_list[k]['op_income_sub5']	, num2_format)
-		worksheet_income.write(13, w, income_statement_list[k]['tax']				, num2_format)
-		worksheet_income.write(14, w, income_statement_list[k]['net_income']		, num2_format)
-		worksheet_income.write(15, w, income_statement_list[k]['eps']				, num2_format)
-		
-		j = j+1
-		prev_year = income_statement_list[k]['year']
-	
+			worksheet_income.write(0, w, str(income_statement_list[k]['year'])+"년")
+			worksheet_income.write(1, w, income_statement_list[k] ['sales']				, num2_format)
+			worksheet_income.write(2, w, income_statement_list[k] ['sales_sub1']		, num2_format)
+			worksheet_income.write(3, w, income_statement_list[k] ['sales_sub2']		, num2_format)
+			worksheet_income.write(4, w, income_statement_list[k] ['sales_sub3']		, num2_format)
+			worksheet_income.write(5, w, income_statement_list[k] ['op_income']			, num2_format)
+			worksheet_income.write(6, w, income_statement_list[k] ['op_income_sub1']	, num2_format)
+			worksheet_income.write(7, w, income_statement_list[k] ['op_income_sub2']	, num2_format)
+			worksheet_income.write(8, w, income_statement_list[k] ['op_income_sub3']	, num2_format)
+			worksheet_income.write(9, w, income_statement_list[k] ['op_income_sub4']	, num2_format)
+			worksheet_income.write(10, w, income_statement_list[k]['op_income_sub6']	, num2_format)
+			worksheet_income.write(11, w, income_statement_list[k]['op_income_sub7']	, num2_format)
+			worksheet_income.write(12, w, income_statement_list[k]['op_income_sub5']	, num2_format)
+			worksheet_income.write(13, w, income_statement_list[k]['tax']				, num2_format)
+			worksheet_income.write(14, w, income_statement_list[k]['net_income']		, num2_format)
+			worksheet_income.write(15, w, income_statement_list[k]['eps']				, num2_format)
+			
+			if prev_year != income_statement_list[k]['year']:
+				j = j+1
+			prev_year = income_statement_list[k]['year']
 	
 	j = 0
 	
 	# Chart WORKSHEET	
-	chart = workbook.add_chart({'type':'line'})
-	chart.add_series({
-					'categories':'=cashflow!$B$1:$Q$1',
-					'name':'=cashflow!A2',
-					'values':'=cashflow!$B$2:$Q$2',
-					'marker':{'type': 'diamond'}
-					})
-	chart.add_series({
-					'name':'=cashflow!A4',
-					'values':'=cashflow!$B$4:$Q$4',
-					'marker':{'type': 'diamond'}
-					})
-	chart.add_series({
-					'name':'=cashflow!A26',
-					'values':'=cashflow!$B$26:$Q$26',
-					'marker':{'type': 'diamond'}
-					})
-	chart.set_legend({'font':{'bold':1}})
-	chart.set_x_axis({'name':"결산년도"})
-	chart.set_y_axis({'name':"단위:억원"})
-	chart.set_title({'name':corp})
+	#chart = workbook.add_chart({'type':'line'})
+	#chart.add_series({
+	#				'categories':'=cashflow!$B$1:$Q$1',
+	#				'name':'=cashflow!A2',
+	#				'values':'=cashflow!$B$2:$Q$2',
+	#				'marker':{'type': 'diamond'}
+	#				})
+	#chart.add_series({
+	#				'name':'=cashflow!A4',
+	#				'values':'=cashflow!$B$4:$Q$4',
+	#				'marker':{'type': 'diamond'}
+	#				})
+	#chart.add_series({
+	#				'name':'=cashflow!A26',
+	#				'values':'=cashflow!$B$26:$Q$26',
+	#				'marker':{'type': 'diamond'}
+	#				})
+	#chart.set_legend({'font':{'bold':1}})
+	#chart.set_x_axis({'name':"결산년도"})
+	#chart.set_y_axis({'name':"단위:억원"})
+	#chart.set_title({'name':corp})
 
-	worksheet_cashflow.insert_chart('C30', chart)
+	#worksheet_cashflow.insert_chart('C30', chart)
 
 	old_year = cashflow_list[0]['year']
 
@@ -493,7 +539,9 @@ def write_excel_file(workbook_name, dart_div_list, cashflow_list, balance_sheet_
 		worksheet_stock.insert_chart('D3', chart)
 
 	workbook.close()
-	draw_figure(income_list, income_list2, year_list, op_cashflow_list, fcf_list, div_list, stock_close)
+	# Deactivate
+	draw_cashflow_figure(income_list, income_list2, year_list, op_cashflow_list, fcf_list, div_list, stock_close)
+	draw_corp_history(year_list, asset_sum_list, liability_sum_list, equity_sum_list, sales_list, op_income_list, net_income_list)
 
 # Get information of balance sheet
 def scrape_balance_sheet(balance_sheet_table, year, unit):
@@ -540,11 +588,11 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 	re_liability_non_current_sub2	=	re.compile("장[ \s]*기[ \s]*차[ \s]*입[ \s]*금")
 	re_liability_non_current_sub3	=	re.compile("장[ \s]*기[ \s]*미[ \s]*지[ \s]*급[ \s]*금")
 	re_liability_non_current_sub4	=	re.compile("이[ \s]*연[ \s]*법[ \s]*인[ \s]*세[ \s]*부[ \s]*채")
-	re_liability_sum				=	re.compile("부[ \s]*채[ \s]*총[ \s]*계")
+	re_liability_sum				=	re.compile("^부[ \s]*채[ \s]*총[ \s]*계|\.[ \s]*부[ \s]*채[ \s]*총[ \s]*계")
 	re_equity						=	re.compile("자[ \s]*본[ \s]*금")
 	re_equity_sub1					=	re.compile("주[ \s]*식[ \s]*발[ \s]*행[ \s]*초[ \s]*과[ \s]*금")
 	re_equity_sub2					=	re.compile("이[ \s]*익[ \s]*잉[ \s]*여[ \s]*금")
-	re_equity_sum					=	re.compile("자[ \s]*본[ \s]*총[ \s]*계")
+	re_equity_sum					=	re.compile("^자[ \s]*본[ \s]*총[ \s]*계|\.[ \s]*자[ \s]*본[ \s]*총[ \s]*계")
 
 	re_asset_list.append(re_asset_current)
 	re_asset_list.append(re_asset_current_sub1)
@@ -682,8 +730,8 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 		print(len(data_col))
 		index_cnt = 0
 
-		try:
-			for (index) in (index_col):
+		for (index) in (index_col):
+			try:
 				if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
 					value = 0.0
 					for i in range(len(re_asset_list)):
@@ -692,9 +740,9 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 							break
 					if value != 0.0:
 						balance_sheet_sub_list[balance_sheet_key_list[i]] = value
-		except Exception as e:
-			print("PARSING ERROR in BALANCE SHEET")
-			print(e)
+			except Exception as e:
+				print("PARSING ERROR in BALANCE SHEET")
+				print(e)
 
 	print(balance_sheet_sub_list)
 	return balance_sheet_sub_list
@@ -739,7 +787,6 @@ def scrape_cashflows(cashflow_table, year, unit):
 	re_fin_cashflow_sub3	= re.compile("자기주식의[ \s]*취득")
 	re_start_cash			= re.compile("기초[ ]*현금[ ]*및[ ]*현금성[ ]*자산|기초의[ \s]*현금[ ]*및[ ]*현금성[ ]*자산|기[ \s]*초[ \s]*의[ \s]*현[ \s]*금|기[ \s]*초[ \s]*현[ \s]*금")
 	re_end_cash				= re.compile("기말[ ]*현금[ ]*및[ ]*현금성[ ]*자산|기말의[ \s]*현금[ ]*및[ ]*현금성[ ]*자산|기[ \s]*말[ \s]*의[ \s]*현[ \s]*금|기[ \s]*말[ \s]*현[ \s]*금")
-
 
 	re_cashflow_list.append(re_op_cashflow)
 	re_cashflow_list.append(re_op_cashflow_sub1) 	
@@ -868,7 +915,6 @@ def scrape_cashflows(cashflow_table, year, unit):
 	cashflow_key_list.append("end_cash")
 
 	#net_income = 0.0
-	
 	#print("len(trs)", len(trs))
 	
 	trs = cashflow_table.findAll("tr")
@@ -939,27 +985,27 @@ def scrape_cashflows(cashflow_table, year, unit):
 		print(len(data_col))
 		index_cnt = 0
 
-		try:
-			for (index) in (index_col):
+		for (index) in (index_col):
+			try:
 				if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
 					value = 0.0
-					for i in range(len(re_asset_list)):
+					for i in range(len(re_cashflow_list)):
 						if re_cashflow_list[i].search(index):
 							value = find_value(data_col[index_cnt], unit)
 							break
 					if value != 0.0:
 						cashflow_sub_list[cashflow_key_list[i]] = value
-		except Exception as e:
-			print("PARSING ERROR")
-			cashflow_sub_list["op_cashflow_sub1"] = "PARSING ERROR"
-			print(e)
+			except Exception as e:
+				print("PARSING ERROR")
+				cashflow_sub_list["op_cashflow_sub1"] = "PARSING ERROR"
+				print(e)
 
 	print(cashflow_sub_list)
 	print(error_cashflows_list)
 	return cashflow_sub_list
 
 # Get information of income statements
-def scrape_income_statement(income_table, year, unit):
+def scrape_income_statement(income_table, year, unit, mode):
 
 	#매출액
 	#매출원가
@@ -978,11 +1024,11 @@ def scrape_income_statement(income_table, year, unit):
 	re_income_list = []
 	
 	# Regular expression
-	re_sales			=	re.compile("매[ \s]*출[ \s]*액")
-	re_sales_sub1		= 	re.compile("매[ \s]*출[ \s]*원[ \s]*가")
+	re_sales			=	re.compile("매[ \s]*출[ \s]*액|영[ \s]*업[ \s]*수[ \s]*익")
+	re_sales_sub1		= 	re.compile("매[ \s]*출[ \s]*원[ \s]*가|영[ \s]*업[ \s]*비[ \s]*용")
 	re_sales_sub2		= 	re.compile("매[ \s]*출[ \s]*총[ \s]*이[ \s]*익")
 	re_sales_sub3		= 	re.compile("판[ \s]*매[ \s]*비[ \s]*와[ \s]*관[ \s]*리[ \s]*비")
-	re_op_income		= 	re.compile("영[ \s]*업[ \s]*이[ \s]*익")
+	re_op_income		= 	re.compile("^영[ \s]*업[ \s]*이[ \s]*익|\.[ \s]*영[ \s]*업[ \s]*이[ \s]*익")
 	re_op_income_sub1	= 	re.compile("기[ \s]*타[ \s]*수[ \s]*익")
 	re_op_income_sub2	= 	re.compile("기[ \s]*타[ \s]*비[ \s]*용")
 	re_op_income_sub3	= 	re.compile("금[ \s]*융[ \s]*수[ \s]*익")
@@ -991,8 +1037,8 @@ def scrape_income_statement(income_table, year, unit):
 	re_op_income_sub7	= 	re.compile("영[ \s]*업[ \s]*외[ \s]*비[ \s]*용")
 	re_op_income_sub5	= 	re.compile("법[ \s]*인[ \s]*세[ \s]*비[ \s]*용[ \s]*차[ \s]*감[ \s]*전[ \s]*순[ \s]*이[ \s]*익|법[ \s]*인[ \s]*세[ \s]*차[ \s]*감[ \s]*전[ \s]*계[ \s]*속[ \s]*영[ \s]*업[ \s]*순[ \s]*이[ \s]*익|법인세[ \s]*차감전[ \s]*순이익|법인세차감전계속영업이익|법인세비용차감전이익|법인세비용차감전계속영업[순]*이익|법인세비용차감전당기순이익|법인세비용차감전순이익|법인세비용차감전[ \s]*계속사업이익|법인세비용차감전순손익")
 	re_tax				=	re.compile("법[ \s]*인[ \s]*세[ \s]*비[ \s]*용")
-	re_net_income		=	re.compile("^순[ \s]*이[ \s]*익|^당[ \s]*기[ \s]*순[ \s]*이[ \s]*익|^연[ ]*결[ ]*당[ ]*기[ ]*순[ ]*이[ ]*익|지배기업의 소유주에게 귀속되는 당기순이익|분기순이익|당\(분\)기순이익|\.[ \s]*당[ \s]*기[ \s]*순[ \s]*이[ \s]*익|당분기연결순이익")
-	re_eps				=	re.compile("기[ \s]*본[ \s]*주[ \s]*당[ \s]*((수[ \s]*익)|(순[ \s]*이[ \s]*익))")
+	re_net_income		=	re.compile("^순[ \s]*이[ \s]*익|^당[ \s]*기[ \s]*순[ \s]*이[ \s]*익|^연[ ]*결[ ]*[총 ]*당[ ]*기[ ]*순[ ]*이[ ]*익|지배기업의 소유주에게 귀속되는 당기순이익|분기순이익|당\(분\)기순이익|\.[ \s]*당[ \s]*기[ \s]*순[ \s]*이[ \s]*익|당분기연결순이익")
+	re_eps				=	re.compile("기[ \s]*본[ \s]*주[ \s]*당[ \s]*((수[ \s]*익)|([순 \s]*이[ \s]*익))")
 
 	re_income_list.append(re_sales)	
 	re_income_list.append(re_sales_sub1)		 	
@@ -1057,17 +1103,28 @@ def scrape_income_statement(income_table, year, unit):
 					value = 0.0
 					for i in range(len(re_income_list)):
 						if re_income_list[i].search(tds[0].text.strip()):
-							if len(tds)>4:
-								if (tds[1].text.strip() != '') and (tds[1].text.strip() != '-'):
-									value = find_value(tds[1].text.strip(), unit)
-									break # for i in len(re_income_list)
-								elif (tds[2].text.strip() != '') and (tds[2].text.strip() != '-'):
-									value = find_value(tds[2].text.strip(), unit)
-									break # for i in len(re_income_list)
+							if mode == 0:
+								if len(tds)>4:
+									if (tds[1].text.strip() != '') and (tds[1].text.strip() != '-'):
+										value = find_value(tds[1].text.strip(), unit)
+										break # for i in len(re_income_list)
+									elif (tds[2].text.strip() != '') and (tds[2].text.strip() != '-'):
+										value = find_value(tds[2].text.strip(), unit)
+										break # for i in len(re_income_list)
+								else:
+									if (tds[1].text.strip() != '') and (tds[1].text.strip() != '-'):
+										value = find_value(tds[1].text.strip(), unit)
+										break # for i in len(re_income_list)
+							# mode 1
 							else:
-								if (tds[1].text.strip() != '') and (tds[1].text.strip() != '-'):
-									value = find_value(tds[1].text.strip(), unit)
-									break # for i in len(re_income_list)
+								if len(tds)>4:
+									if (tds[3].text.strip() != '') and (tds[3].text.strip() != '-'):
+										value = find_value(tds[2].text.strip(), unit)
+										break # for i in len(re_income_list)
+								else:
+									if (tds[2].text.strip() != '') and (tds[2].text.strip() != '-'):
+										value = find_value(tds[1].text.strip(), unit)
+										break # for i in len(re_income_list)
 					if value != 0.0:
 						income_statement_sub_list[income_statement_key_list[i]] = value
 			except Exception as e:
@@ -1104,8 +1161,8 @@ def scrape_income_statement(income_table, year, unit):
 		print(len(data_col))
 		index_cnt = 0
 
-		try:
-			for (index) in (index_col):
+		for (index) in (index_col):
+			try:
 				if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
 					value = 0.0
 					for i in range(len(re_income_list)):
@@ -1113,10 +1170,10 @@ def scrape_income_statement(income_table, year, unit):
 							value = find_value(data_col[index_cnt], unit)
 							break
 					if value != 0.0:
-						balance_sheet_sub_list[income_statement_key_list[i]] = value
-		except Exception as e:
-			print("PARSING ERROR in INCOME STATEMENT")
-			print(e)
+						income_statement_sub_list[income_statement_key_list[i]] = value
+			except Exception as e:
+				print("PARSING ERROR in INCOME STATEMENT")
+				print(e)
 
 	print(income_statement_sub_list)
 	return income_statement_sub_list
@@ -1125,12 +1182,11 @@ def scrape_income_statement(income_table, year, unit):
 def main():
 
 	# Default
-	#corp = "삼성전자"
-	corp = "LG화학"
+	corp = "삼성전자"
+	#corp = "LG화학"
 	workbook_name = "DART_financial_statement.xlsx"
 
 	try:
-		#opts, args = getopt.getopt(sys.argv[1:], "m:s:e:c:o:h", ["mode=", "start=", "end=", "corp=", "output", "help"])
 		opts, args = getopt.getopt(sys.argv[1:], "c:o:h", ["corp=", "output", "help"])
 	except getopt.GetoptError as err:
 		print(err)
@@ -1144,8 +1200,7 @@ def main():
 -h or --help            :  Show help messages
 
 <Example>
->> python dart_dividends.py -m 0 -s 20171115 -e 20171215 -o out_file_name
->> python dart_dividends.py -m 1 -c S-Oil
+>> python dart_financial_statement.py -m 1 -c S-Oil
 ================================================================================
 					"""
 			print(help_msg)
@@ -1157,12 +1212,10 @@ def main():
 
 	re_income_find = re.compile("법[ \s]*인[ \s]*세[ \s]*비[ \s]*용[ \s]*차[ \s]*감[ \s]*전[ \s]*순[ \s]*이[ \s]*익|법[ \s]*인[ \s]*세[ \s]*차[ \s]*감[ \s]*전[ \s]*계[ \s]*속[ \s]*영[ \s]*업[ \s]*순[ \s]*이[ \s]*익|법인세[ \s]*차감전[ \s]*순이익|법인세차감전계속영업이익|법인세비용차감전이익|법인세비용차감전계속영업[순]*이익|법인세비용차감전당기순이익|법인세비용차감전순이익|법인세비용차감전[ \s]*계속사업이익|법인세비용차감전순손익")
 	re_cashflow_find = re.compile("영업활동[ \s]*현금[ \s]*흐름|영업활동으로[ \s]*인한[ \s]*[순]*현금[ \s]*흐름|영업활동으로부터의[ \s]*현금흐름")
-	#re_balance_sheet_find = re.compile("^[ \s]*유[ \s]*동[ \s]*자[ \s]*산|\.[ \s]*유[ \s]*동[ \s]*자[ \s]*산")
 	re_balance_sheet_find = re.compile("현[ \s]*금[ \s]*및[ \s]*현[ \s]*금[ \s]*((성[ \s]*자[ \s]*산)|(등[ \s]*가[ \s]*물))")
 
 	### PART I - Read Excel file for stock lists
 	num_stock = 2040
-	#num_stock = 100
 	input_file = "basic_20171221.xlsx"
 	cur_dir = os.getcwd()
 	workbook_read_name = input_file
@@ -1197,11 +1250,11 @@ def main():
 	url_templete = "http://dart.fss.or.kr/dsab002/search.ax?reportName=%s&&maxResults=100&&textCrpNm=%s&&startDate=%s&&endDate=%s"
 	headers = {'Cookie':'DSAB002_MAXRESULTS=5000;'}
 	
-	dart_div_list = []
+	dart_post_list = []
 	cashflow_list = []
 	
 	year = 2017
-	start_day = datetime(2007,1,1)
+	start_day = datetime(2004,1,1)
 	#start_day = datetime(2000,1,1)
 	#end_day = datetime(2002,11,15)
 	end_day = datetime(2017,11,15)
@@ -1258,7 +1311,7 @@ def main():
 		title_list.append(title)
 		reporter_list.append(reporter)
 	
-		dart_div_sublist = []
+		dart_post_sublist = []
 
 		year = int(date[0:4])
 		print(corp_name)
@@ -1418,7 +1471,7 @@ def main():
 					unit = 100000.0
 			
 			cashflow_sub_list = scrape_cashflows(cashflow_table, 2017, unit)
-			income_statement_sub_list = scrape_income_statement(income_table, 2017, unit)
+			income_statement_sub_list = scrape_income_statement(income_table, 2017, unit, 1)
 			balance_sheet_sub_list = scrape_balance_sheet(balance_table, 2017, unit)
 			
 			cashflow_sub_list['net_income'] = income_statement_sub_list['net_income']
@@ -1427,76 +1480,47 @@ def main():
 		else:
 			print("FINDING LINE NUMBER ERROR")
 			cashflow_sub_list = {}
-			op_cashflow = 0.0
-			op_cashflow_sub1 = "FINDING LINE NUMBER ERROR"
-			op_cashflow_sub2 = 0.0
-			invest_cashflow = 0.0
-			invest_cashflow_sub1 = 0.0
-			invest_cashflow_sub2 = 0.0
-			invest_cashflow_sub3 = 0.0
-			invest_cashflow_sub4 = 0.0
-			invest_cashflow_sub5 = 0.0
-			invest_cashflow_sub6 = 0.0
-			invest_cashflow_sub7 = 0.0
-			invest_cashflow_sub8 = 0.0
-			invest_cashflow_sub9 = 0.0
-			invest_cashflow_sub10 = 0.0
-			invest_cashflow_sub11 = 0.0
-			invest_cashflow_sub12 = 0.0
-			invest_cashflow_sub13 = 0.0
-			invest_cashflow_sub14 = 0.0
-			invest_cashflow_sub15 = 0.0
-			invest_cashflow_sub16 = 0.0
-			invest_cashflow_sub17 = 0.0
-			invest_cashflow_sub18 = 0.0
-			fin_cashflow = 0.0
-			fin_cashflow_sub1 = 0.0
-			fin_cashflow_sub2 = 0.0
-			fin_cashflow_sub3 = 0.0
-			start_cash = 0.0
-			end_cash = 0.0
-			net_income = 0.0
 			
-			cashflow_sub_list['year'] = 2017
-			cashflow_sub_list['op_cashflow'] = op_cashflow
-			cashflow_sub_list['op_cashflow_sub1'] = op_cashflow_sub1
-			cashflow_sub_list['op_cashflow_sub2'] = op_cashflow_sub2
+			cashflow_sub_list['year']				= 2017
+			cashflow_sub_list['op_cashflow']		= 0.0
+			cashflow_sub_list['op_cashflow_sub1']	= "FINDING LINE NUMBER ERROR"
+			cashflow_sub_list['op_cashflow_sub2']	= 0.0
 
-			cashflow_sub_list['invest_cashflow'] = invest_cashflow
-			cashflow_sub_list['invest_cashflow_sub1'] = invest_cashflow_sub1
-			cashflow_sub_list['invest_cashflow_sub2'] = invest_cashflow_sub2
-			cashflow_sub_list['invest_cashflow_sub3'] = invest_cashflow_sub3
-			cashflow_sub_list['invest_cashflow_sub4'] = invest_cashflow_sub4
-			cashflow_sub_list['invest_cashflow_sub5'] = invest_cashflow_sub5
-			cashflow_sub_list['invest_cashflow_sub6'] = invest_cashflow_sub6
-			cashflow_sub_list['invest_cashflow_sub7'] = invest_cashflow_sub7
-			cashflow_sub_list['invest_cashflow_sub8'] = invest_cashflow_sub8
-			cashflow_sub_list['invest_cashflow_sub9'] = invest_cashflow_sub9
-			cashflow_sub_list['invest_cashflow_sub10'] = invest_cashflow_sub10
-			cashflow_sub_list['invest_cashflow_sub11'] = invest_cashflow_sub11
-			cashflow_sub_list['invest_cashflow_sub12'] = invest_cashflow_sub12
-			cashflow_sub_list['invest_cashflow_sub13'] = invest_cashflow_sub13
-			cashflow_sub_list['invest_cashflow_sub14'] = invest_cashflow_sub14
-			cashflow_sub_list['invest_cashflow_sub15'] = invest_cashflow_sub15
-			cashflow_sub_list['invest_cashflow_sub16'] = invest_cashflow_sub16
-			cashflow_sub_list['invest_cashflow_sub17'] = invest_cashflow_sub17
-			cashflow_sub_list['invest_cashflow_sub18'] = invest_cashflow_sub18
+			cashflow_sub_list['invest_cashflow']		= 0.0
+			cashflow_sub_list['invest_cashflow_sub1']	= 0.0
+			cashflow_sub_list['invest_cashflow_sub2'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub3'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub4'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub5'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub6'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub7'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub8'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub9'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub10']	= 0.0
+			cashflow_sub_list['invest_cashflow_sub11'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub12'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub13'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub14'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub15'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub16'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub17'] 	= 0.0
+			cashflow_sub_list['invest_cashflow_sub18'] 	= 0.0
 			
-			cashflow_sub_list['fin_cashflow'] = fin_cashflow
-			cashflow_sub_list['fin_cashflow_sub1'] = fin_cashflow_sub1
-			cashflow_sub_list['fin_cashflow_sub2'] = fin_cashflow_sub2
-			cashflow_sub_list['fin_cashflow_sub3'] = fin_cashflow_sub3
+			cashflow_sub_list['fin_cashflow']		= 0.0
+			cashflow_sub_list['fin_cashflow_sub1']	= 0.0
+			cashflow_sub_list['fin_cashflow_sub2'] 	= 0.0
+			cashflow_sub_list['fin_cashflow_sub3'] 	= 0.0
 
-			cashflow_sub_list['start_cash'] = start_cash
-			cashflow_sub_list['end_cash'] = end_cash
+			cashflow_sub_list['start_cash']		= 0.0
+			cashflow_sub_list['end_cash']		= 0.0
+			cashflow_sub_list['net_income']		= 0.0
 			
-			cashflow_sub_list['net_income'] = net_income
-			
-			print(cashflow_sub_list)
+			#print(cashflow_sub_list)
 
 			balance_sheet_sub_list = {}
+			balance_sheet_sub_list['year']						=	2017
 			balance_sheet_sub_list["asset_current"]				=	0.0
-			balance_sheet_sub_list["asset_current_sub1"]		=	0.0
+			balance_sheet_sub_list["asset_current_sub1"]		=	"FINDING LINE NUMBER ERROR"
 			balance_sheet_sub_list["asset_current_sub2"]		=	0.0
 			balance_sheet_sub_list["asset_current_sub3"]		=	0.0
 			balance_sheet_sub_list["asset_non_current"]			=	0.0
@@ -1517,11 +1541,11 @@ def main():
 			balance_sheet_sub_list["equity_sub1"]					=	0.0
 			balance_sheet_sub_list["equity_sub2"]					=	0.0
 			balance_sheet_sub_list["equity_sum"]					=	0.0
-			balance_sheet_sub_list['year']						=	year-1
 					
 			income_statement_sub_list = {}
+			income_statement_sub_list['year']				=	2017
 			income_statement_sub_list["sales"]				=	0.0
-			income_statement_sub_list["sales_sub1"]			=	0.0
+			income_statement_sub_list["sales_sub1"]			=	"FINDING LINE NUMBER ERROR"
 			income_statement_sub_list["sales_sub2"]			=	0.0
 			income_statement_sub_list["sales_sub3"]			=	0.0
 			income_statement_sub_list["op_income"]		 	=	0.0
@@ -1535,22 +1559,17 @@ def main():
 			income_statement_sub_list["tax"]				=	0.0
 			income_statement_sub_list["net_income"]			=	0.0
 			income_statement_sub_list["eps"]				=	0.0
-			income_statement_sub_list['year']						=	year-1
 
-			#except:
-			#	print ("URL ERROR")
+		dart_post_sublist.append(date)
+		dart_post_sublist.append(corp_name)
+		dart_post_sublist.append(market)
+		dart_post_sublist.append(title)
+		dart_post_sublist.append(link)
 			
-		dart_div_sublist.append(date)
-		dart_div_sublist.append(corp_name)
-		dart_div_sublist.append(market)
-		dart_div_sublist.append(title)
-		dart_div_sublist.append(link)
-			
-		dart_div_list.append(dart_div_sublist)
+		dart_post_list.append(dart_post_sublist)
 		cashflow_list.append(cashflow_sub_list)
 		balance_sheet_list.append(balance_sheet_sub_list)
 		income_statement_list.append(income_statement_sub_list)
-
 
 	#handle = urllib.request.urlopen(url_templete % (report, urllib.parse.quote(corp)))
 	#print("URL" + url_templete % (report, corp))
@@ -1599,7 +1618,7 @@ def main():
 				title_list.append(title)
 				reporter_list.append(reporter)
 
-				dart_div_sublist = []
+				dart_post_sublist = []
 
 				year = int(date[0:4])
 				print(corp_name)
@@ -1820,7 +1839,7 @@ def main():
 				
 					# Scrape data
 					cashflow_sub_list = scrape_cashflows(cashflow_table, year-1, unit)
-					income_statement_sub_list = scrape_income_statement(income_table, year-1, unit)
+					income_statement_sub_list = scrape_income_statement(income_table, year-1, unit, 0)
 					balance_sheet_sub_list = scrape_balance_sheet(balance_table, year-1, unit)
 					print(cashflow_sub_list)
 					
@@ -1830,76 +1849,45 @@ def main():
 				else:
 					print("FINDING LINE NUMBER ERROR")
 					cashflow_sub_list = {}
-					op_cashflow = 0.0
-					op_cashflow_sub1 = "FINDING LINE NUMBER ERROR"
-					op_cashflow_sub2 = 0.0
-					invest_cashflow = 0.0
-					invest_cashflow_sub1 = 0.0
-					invest_cashflow_sub2 = 0.0
-					invest_cashflow_sub3 = 0.0
-					invest_cashflow_sub4 = 0.0
-					invest_cashflow_sub5 = 0.0
-					invest_cashflow_sub6 = 0.0
-					invest_cashflow_sub7 = 0.0
-					invest_cashflow_sub8 = 0.0
-					invest_cashflow_sub9 = 0.0
-					invest_cashflow_sub10 = 0.0
-					invest_cashflow_sub11 = 0.0
-					invest_cashflow_sub12 = 0.0
-					invest_cashflow_sub13 = 0.0
-					invest_cashflow_sub14 = 0.0
-					invest_cashflow_sub15 = 0.0
-					invest_cashflow_sub16 = 0.0
-					invest_cashflow_sub17 = 0.0
-					invest_cashflow_sub18 = 0.0
-					fin_cashflow = 0.0
-					fin_cashflow_sub1 = 0.0
-					fin_cashflow_sub2 = 0.0
-					fin_cashflow_sub3 = 0.0
-					start_cash = 0.0
-					end_cash = 0.0
-					net_income = 0.0
 					
-					cashflow_sub_list['year'] = year-1
-					cashflow_sub_list['op_cashflow'] = op_cashflow
-					cashflow_sub_list['op_cashflow_sub1'] = op_cashflow_sub1
-					cashflow_sub_list['op_cashflow_sub2'] = op_cashflow_sub2
+					cashflow_sub_list['year']				= year-1
+					cashflow_sub_list['op_cashflow']		= 0.0
+					cashflow_sub_list['op_cashflow_sub1']	= "FINDING LINE NUMBER ERROR"
+					cashflow_sub_list['op_cashflow_sub2']	= 0.0
 
-					cashflow_sub_list['invest_cashflow'] = invest_cashflow
-					cashflow_sub_list['invest_cashflow_sub1'] = invest_cashflow_sub1
-					cashflow_sub_list['invest_cashflow_sub2'] = invest_cashflow_sub2
-					cashflow_sub_list['invest_cashflow_sub3'] = invest_cashflow_sub3
-					cashflow_sub_list['invest_cashflow_sub4'] = invest_cashflow_sub4
-					cashflow_sub_list['invest_cashflow_sub5'] = invest_cashflow_sub5
-					cashflow_sub_list['invest_cashflow_sub6'] = invest_cashflow_sub6
-					cashflow_sub_list['invest_cashflow_sub7'] = invest_cashflow_sub7
-					cashflow_sub_list['invest_cashflow_sub8'] = invest_cashflow_sub8
-					cashflow_sub_list['invest_cashflow_sub9'] = invest_cashflow_sub9
-					cashflow_sub_list['invest_cashflow_sub10'] = invest_cashflow_sub10
-					cashflow_sub_list['invest_cashflow_sub11'] = invest_cashflow_sub11
-					cashflow_sub_list['invest_cashflow_sub12'] = invest_cashflow_sub12
-					cashflow_sub_list['invest_cashflow_sub13'] = invest_cashflow_sub13
-					cashflow_sub_list['invest_cashflow_sub14'] = invest_cashflow_sub14
-					cashflow_sub_list['invest_cashflow_sub15'] = invest_cashflow_sub15
-					cashflow_sub_list['invest_cashflow_sub16'] = invest_cashflow_sub16
-					cashflow_sub_list['invest_cashflow_sub17'] = invest_cashflow_sub17
-					cashflow_sub_list['invest_cashflow_sub18'] = invest_cashflow_sub18
+					cashflow_sub_list['invest_cashflow']		= 0.0
+					cashflow_sub_list['invest_cashflow_sub1']	= 0.0
+					cashflow_sub_list['invest_cashflow_sub2'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub3'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub4'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub5'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub6'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub7'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub8'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub9'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub10']	= 0.0
+					cashflow_sub_list['invest_cashflow_sub11'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub12'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub13'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub14'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub15'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub16'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub17'] 	= 0.0
+					cashflow_sub_list['invest_cashflow_sub18'] 	= 0.0
 					
-					cashflow_sub_list['fin_cashflow'] = fin_cashflow
-					cashflow_sub_list['fin_cashflow_sub1'] = fin_cashflow_sub1
-					cashflow_sub_list['fin_cashflow_sub2'] = fin_cashflow_sub2
-					cashflow_sub_list['fin_cashflow_sub3'] = fin_cashflow_sub3
+					cashflow_sub_list['fin_cashflow']		= 0.0
+					cashflow_sub_list['fin_cashflow_sub1']	= 0.0
+					cashflow_sub_list['fin_cashflow_sub2'] 	= 0.0
+					cashflow_sub_list['fin_cashflow_sub3'] 	= 0.0
 
-					cashflow_sub_list['start_cash'] = start_cash
-					cashflow_sub_list['end_cash'] = end_cash
-					
-					cashflow_sub_list['net_income'] = net_income
-					
-					print(cashflow_sub_list)
-
+					cashflow_sub_list['start_cash']		= 0.0
+					cashflow_sub_list['end_cash']		= 0.0
+					cashflow_sub_list['net_income']		= 0.0
+			
 					balance_sheet_sub_list = {}
+					balance_sheet_sub_list['year']						=	year-1
 					balance_sheet_sub_list["asset_current"]				=	0.0
-					balance_sheet_sub_list["asset_current_sub1"]		=	0.0
+					balance_sheet_sub_list["asset_current_sub1"]		=	"FINDING LINE NUMBER ERROR"
 					balance_sheet_sub_list["asset_current_sub2"]		=	0.0
 					balance_sheet_sub_list["asset_current_sub3"]		=	0.0
 					balance_sheet_sub_list["asset_non_current"]			=	0.0
@@ -1920,11 +1908,11 @@ def main():
 					balance_sheet_sub_list["equity_sub1"]					=	0.0
 					balance_sheet_sub_list["equity_sub2"]					=	0.0
 					balance_sheet_sub_list["equity_sum"]					=	0.0
-					balance_sheet_sub_list['year']						=	year-1
 
 					income_statement_sub_list = {}
+					income_statement_sub_list["year"]				=	year-1
 					income_statement_sub_list["sales"]				=	0.0
-					income_statement_sub_list["sales_sub1"]			=	0.0
+					income_statement_sub_list["sales_sub1"]			=	"FINDING LINE NUMBER ERROR"
 					income_statement_sub_list["sales_sub2"]			=	0.0
 					income_statement_sub_list["sales_sub3"]			=	0.0
 					income_statement_sub_list["op_income"]		 	=	0.0
@@ -1939,21 +1927,18 @@ def main():
 					income_statement_sub_list["net_income"]			=	0.0
 					income_statement_sub_list["eps"]				=	0.0
 
-				#except:
-				#	print ("URL ERROR")
+				dart_post_sublist.append(date)
+				dart_post_sublist.append(corp_name)
+				dart_post_sublist.append(market)
+				dart_post_sublist.append(title)
+				dart_post_sublist.append(link)
 				
-				dart_div_sublist.append(date)
-				dart_div_sublist.append(corp_name)
-				dart_div_sublist.append(market)
-				dart_div_sublist.append(title)
-				dart_div_sublist.append(link)
-				
-				dart_div_list.append(dart_div_sublist)
+				dart_post_list.append(dart_post_sublist)
 				cashflow_list.append(cashflow_sub_list)
 				balance_sheet_list.append(balance_sheet_sub_list)
 				income_statement_list.append(income_statement_sub_list)
 
-	write_excel_file(workbook_name, dart_div_list, cashflow_list, balance_sheet_list, income_statement_list, corp, stock_code, stock_cat)
+	write_excel_file(workbook_name, dart_post_list, cashflow_list, balance_sheet_list, income_statement_list, corp, stock_code, stock_cat)
 
 # Main
 if __name__ == "__main__":
