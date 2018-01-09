@@ -49,16 +49,18 @@ def draw_corp_history(year_list, asset_sum_list, liability_sum_list, equity_sum_
 	
 	fig, ax1 = plt.subplots()
 
-	ax1.plot(year_list, equity_sum_list, label="Equity", color='r', marker='D')
+	ax1.bar(year_list, equity_sum_list, label="Equity", color='gray')
+	#ax1.plot(year_list, equity_sum_list, label="Equity", color='r', marker='D')
 	ax1.plot(year_list, asset_sum_list, label="Asset", color='y', marker='D')
 	ax1.plot(year_list, liability_sum_list, label="Liability", color='b', marker='D')
+	ax1.plot(year_list, sales_list, label="Sales", color='r', marker='D')
 	ax1.set_xlabel("YEAR")
 	plt.legend(loc=2)
 	
 	ax2 = ax1.twinx().twiny()
-	ax2.plot(year_list, sales_list, label="Sales", color='g', marker='D', linestyle ='dashed')
+	#ax2.plot(year_list, sales_list, label="Sales", color='g', marker='D', linestyle ='dashed')
 	ax2.plot(year_list, op_income_list, label="Op income", color='magenta', marker='D', linestyle ='dashed')
-	ax2.plot(year_list, net_income_list, label="Net income", color='c', marker='D', linestyle ='dashed')
+	ax2.plot(year_list, net_income_list, label="Net income", color='g', marker='D', linestyle ='dashed')
 	plt.legend(loc=4)
 	
 	plt.show()
@@ -593,7 +595,7 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 	re_liability_current_sub1		=	re.compile("매[ \s]*입[ \s]*채[ \s]*무[ \s]*")
 	re_liability_current_sub2		=	re.compile("단[ \s]*기[ \s]*차[ \s]*입[ \s]*금")
 	re_liability_current_sub3		=	re.compile("^미[ \s]*지[ \s]*급[ \s]*금[ \s]*")
-	re_liability_non_current		=	re.compile("비[ \s]*유[ \s]*동[ \s]*부[ \s]*채|고[ \s]*정[ \s]*부[ \s]*채")
+	re_liability_non_current		=	re.compile("^비[ \s]*유[ \s]*동[ \s]*부[ \s]*채|\.[ \s]*비[ \s]*유[ \s]*동[ \s]*부[ \s]*채|고[ \s]*정[ \s]*부[ \s]*채")
 	re_liability_non_current_sub1	=	re.compile("사[ \s]*채[ \s]*")
 	re_liability_non_current_sub2	=	re.compile("장[ \s]*기[ \s]*차[ \s]*입[ \s]*금")
 	re_liability_non_current_sub3	=	re.compile("장[ \s]*기[ \s]*미[ \s]*지[ \s]*급[ \s]*금")
@@ -732,31 +734,52 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 		for b in tds[1].childGenerator():
 			if (str(b) == "<br/>"):
 				if (prev == 1):
-					data_col.append('0')	
+					data_col.append('')	
 				prev = 1
 			else:
 				data_col.append(str(b))	
 				prev = 0
+		data_col2 = []
+		prev = 0
+		for b in tds[2].childGenerator():
+			if (str(b) == "<br/>"):
+				if (prev == 1):
+					data_col2.append('')	
+				prev = 1
+			else:
+				data_col2.append(str(b))	
+				prev = 0
 
-		#print(index_col)
-		#print(data_col)
+		print("##################################################")
+		print(index_col)
+		print(data_col)
+		print(data_col2)
 		print(len(index_col))
 		print(len(data_col))
 		index_cnt = 0
 
 		for (index) in (index_col):
 			try:
-				if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
-					value = 0.0
-					for i in range(len(re_asset_list)):
-						if re_asset_list[i].search(index):
-							value = find_value(data_col[index_cnt], unit)
-							break
-					if value != 0.0:
-						balance_sheet_sub_list[balance_sheet_key_list[i]] = value
+				value = 0.0
+				for i in range(len(re_asset_list)):
+					if re_asset_list[i].search(index):
+						if len(tds)>4:
+							if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
+								value = find_value(data_col[index_cnt], unit)
+								break
+							elif (data_col2[index_cnt].strip() != '') and (data_col2[index_cnt].strip() != '-'):
+								value = find_value(data_col2[index_cnt], unit)
+								break
+						else:
+							if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
+								value = find_value(data_col[index_cnt], unit)
+								break
+				if value != 0.0:
+					balance_sheet_sub_list[balance_sheet_key_list[i]] = value
 			except Exception as e:
 				print("PARSING ERROR in BALANCE SHEET")
 				print(e)
+			index_cnt = index_cnt + 1
 
 	print(balance_sheet_sub_list)
 	return balance_sheet_sub_list
@@ -992,6 +1015,16 @@ def scrape_cashflows(cashflow_table, year, unit):
 			else:
 				data_col.append(str(b))	
 				prev = 0
+		data_col2 = []
+		prev = 0
+		for b in tds[2].childGenerator():
+			if (str(b) == "<br/>"):
+				if (prev == 1):
+					data_col2.append('')	
+				prev = 1
+			else:
+				data_col2.append(str(b))	
+				prev = 0
 
 		#print(index_col)
 		#print(data_col)
@@ -1001,18 +1034,27 @@ def scrape_cashflows(cashflow_table, year, unit):
 
 		for (index) in (index_col):
 			try:
-				if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
-					value = 0.0
-					for i in range(len(re_cashflow_list)):
-						if re_cashflow_list[i].search(index):
-							value = find_value(data_col[index_cnt], unit)
-							break
-					if value != 0.0:
-						cashflow_sub_list[cashflow_key_list[i]] = value
+				value = 0.0
+				for i in range(len(re_cashflow_list)):
+					if re_cashflow_list[i].search(index):
+						if len(tds)>4:
+							if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
+								value = find_value(data_col[index_cnt], unit)
+								break
+							elif (data_col2[index_cnt].strip() != '') and (data_col2[index_cnt].strip() != '-'):
+								value = find_value(data_col2[index_cnt], unit)
+								break
+						else:
+							if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
+								value = find_value(data_col[index_cnt], unit)
+								break
+				if value != 0.0:
+					cashflow_sub_list[cashflow_key_list[i]] = value
 			except Exception as e:
 				print("PARSING ERROR")
 				cashflow_sub_list["op_cashflow_sub1"] = "PARSING ERROR"
 				print(e)
+			index_cnt = index_cnt + 1
 
 	print(cashflow_sub_list)
 	print(error_cashflows_list)
@@ -1038,9 +1080,9 @@ def scrape_income_statement(income_table, year, unit, mode):
 	re_income_list = []
 	
 	# Regular expression
-	re_sales			=	re.compile("매[ \s]*출[ \s]*액")
-	re_sales_sub1		= 	re.compile("매[ \s]*출[ \s]*원[ \s]*가")
-	re_sales_sub2		= 	re.compile("매[ \s]*출[ \s]*총[ \s]*이[ \s]*익")
+	re_sales			=	re.compile("^매[ \s]*출[ \s]*액|\.[ \s]*매[ \s]*출[ \s]*액|\(매출액\)")
+	re_sales_sub1		= 	re.compile("^매[ \s]*출[ \s]*원[ \s]*가|\.[ \s]*매[ \s]*출[ \s]*원[ \s]*가")
+	re_sales_sub2		= 	re.compile("^매[ \s]*출[ \s]*총[ \s]*이[ \s]*익|\.[ \s]*매[ \s]*출[ \s]*총[ \s]*이[ \s]*익")
 	re_sales_sub3		= 	re.compile("판[ \s]*매[ \s]*비[ \s]*와[ \s]*관[ \s]*리[ \s]*비")
 	re_sales2			=	re.compile("^영[ \s]*업[ \s]*수[ \s]*익|\.[ \s]*영[ \s]*업[ \s]*수[ \s]*익")
 	re_sales2_sub1		= 	re.compile("^영[ \s]*업[ \s]*비[ \s]*용|\.[ \s]*영[ \s]*업[ \s]*비[ \s]*용")
@@ -1178,6 +1220,17 @@ def scrape_income_statement(income_table, year, unit, mode):
 			else:
 				data_col.append(str(b))	
 				prev = 0
+		data_col2 = []
+		prev = 0
+		for b in tds[2].childGenerator():
+			if (str(b) == "<br/>"):
+				if (prev == 1):
+					data_col2.append('')	
+				prev = 1
+			else:
+				data_col2.append(str(b))	
+				prev = 0
+
 		
 		print(len(index_col))
 		print(len(data_col))
@@ -1185,17 +1238,26 @@ def scrape_income_statement(income_table, year, unit, mode):
 
 		for (index) in (index_col):
 			try:
-				if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
-					value = 0.0
-					for i in range(len(re_income_list)):
-						if re_income_list[i].search(index):
-							value = find_value(data_col[index_cnt], unit)
-							break
-					if value != 0.0:
-						income_statement_sub_list[income_statement_key_list[i]] = value
+				value = 0.0
+				for i in range(len(re_income_list)):
+					if re_income_list[i].search(index):
+						if len(tds)>4:
+							if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
+								value = find_value(data_col[index_cnt], unit)
+								break
+							elif (data_col2[index_cnt].strip() != '') and (data_col2[index_cnt].strip() != '-'):
+								value = find_value(data_col2[index_cnt], unit)
+								break
+						else:
+							if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
+								value = find_value(data_col[index_cnt], unit)
+								break
+				if value != 0.0:
+					income_statement_sub_list[income_statement_key_list[i]] = value
 			except Exception as e:
 				print("PARSING ERROR in INCOME STATEMENT")
 				print(e)
+			index_cnt = index_cnt + 1
 
 	print(income_statement_sub_list)
 	return income_statement_sub_list
@@ -1232,8 +1294,8 @@ def main():
 		elif option == "--output" or option == "-o":
 			workbook_name = argument + ".xlsx"
 
-	re_income_find = re.compile("법[ \s]*인[ \s]*세[ \s]*비[ \s]*용[ \s]*차[ \s]*감[ \s]*전[ \s]*순[ \s]*이[ \s]*익|법[ \s]*인[ \s]*세[ \s]*차[ \s]*감[ \s]*전[ \s]*계[ \s]*속[ \s]*영[ \s]*업[ \s]*순[ \s]*이[ \s]*익|법인세[ \s]*차감전[ \s]*순이익|법인세차감전계속영업이익|법인세비용차감전이익|법인세비용차감전계속영업[순]*이익|법인세비용차감전당기순이익|법인세비용차감전순이익|법인세비용차감전[ \s]*계속사업이익|법인세비용차감전순손익")
-	re_cashflow_find = re.compile("영업활동[ \s]*현금[ \s]*흐름|영업활동으로[ \s]*인한[ \s]*[순]*현금[ \s]*흐름|영업활동으로부터의[ \s]*현금흐름")
+	re_income_find = re.compile("법[ \s]*인[ \s]*세[ \s]*비[ \s]*용(\(이익\))*[ \s]*차[ \s]*감[ \s]*전[ \s]*순[ \s]*이[ \s]*익|법[ \s]*인[ \s]*세[ \s]*차[ \s]*감[ \s]*전[ \s]*계[ \s]*속[ \s]*영[ \s]*업[ \s]*순[ \s]*이[ \s]*익|법인세[ \s]*차감전[ \s]*순이익|법인세차감전계속영업이익|법인세비용차감전이익|법인세비용차감전계속영업[순]*이익|법인세비용차감전당기순이익|법인세(비용차감|손익가감)전순이익|법인세비용차감전[ \s]*계속사업이익|법인세비용차감전순손익")
+	re_cashflow_find = re.compile("영업활동[ \s]*현금[ \s]*흐름|영업활동으로[ \s]*인한[ \s]*[순]*현금[ \s]*흐름|영업활동으로부터의[ \s]*현금흐름|영업활동으로 인한 자산부채의 변동")
 	re_balance_sheet_find = re.compile("현[ \s]*금[ \s]*및[ \s]*현[ \s]*금[ \s]*((성[ \s]*자[ \s]*산)|(등[ \s]*가[ \s]*물))")
 
 	### PART I - Read Excel file for stock lists
@@ -1274,6 +1336,8 @@ def main():
 	
 	dart_post_list = []
 	cashflow_list = []
+	balance_sheet_list = []
+	income_statement_list = []
 	
 	year = 2017
 	start_day = datetime(2004,1,1)
@@ -1311,9 +1375,6 @@ def main():
 		market_list = []
 		title_list = []
 		reporter_list = []
-		cashflow_list = []
-		balance_sheet_list = []
-		income_statement_list = []
 
 		# recent report
 		tr = trs[1]
@@ -1486,10 +1547,13 @@ def main():
 			if unit_find == 0:
 				print ("UNIT NOT FOUND")
 				if len(soup3.findAll(string=re_unit1)) != 0:
+					print("Unit ###1")
 					unit = 100000000.0
 				elif len(soup3.findAll(string=re_unit2)) != 0:
+					print("Unit ###2")
 					unit = 100.0
 				elif len(soup3.findAll(string=re_unit3)) != 0:
+					print("Unit ###3")
 					unit = 100000.0
 			
 			cashflow_sub_list = scrape_cashflows(cashflow_table, 2017, unit)
@@ -1847,10 +1911,13 @@ def main():
 					if unit_find == 0:
 						print ("UNIT NOT FOUND")
 						if len(soup3.findAll(string=re_unit1)) != 0:
+							print("Unit ###1")
 							unit = 100000000.0
 						elif len(soup3.findAll(string=re_unit2)) != 0:
+							print("Unit ###2")
 							unit = 100.0
 						elif len(soup3.findAll(string=re_unit3)) != 0:
+							print("Unit ###3")
 							unit = 100000.0
 			
 					## 원
