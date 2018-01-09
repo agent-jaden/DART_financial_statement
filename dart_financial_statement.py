@@ -52,11 +52,15 @@ def draw_corp_history(year_list, asset_sum_list, liability_sum_list, equity_sum_
 	ax1.plot(year_list, equity_sum_list, label="Equity", color='r', marker='D')
 	ax1.plot(year_list, asset_sum_list, label="Asset", color='y', marker='D')
 	ax1.plot(year_list, liability_sum_list, label="Liability", color='b', marker='D')
-	ax1.plot(year_list, sales_list, label="Sales", color='g', marker='D')
-	ax1.plot(year_list, op_income_list, label="Op income", color='magenta', marker='D')
-	ax1.plot(year_list, net_income_list, label="Net income", color='c', marker='D')
 	ax1.set_xlabel("YEAR")
 	plt.legend(loc=2)
+	
+	ax2 = ax1.twinx().twiny()
+	ax2.plot(year_list, sales_list, label="Sales", color='g', marker='D', linestyle ='dashed')
+	ax2.plot(year_list, op_income_list, label="Op income", color='magenta', marker='D', linestyle ='dashed')
+	ax2.plot(year_list, net_income_list, label="Net income", color='c', marker='D', linestyle ='dashed')
+	plt.legend(loc=4)
+	
 	plt.show()
 
 
@@ -358,8 +362,9 @@ def write_excel_file(workbook_name, dart_post_list, cashflow_list, balance_sheet
 	worksheet_bs.write(18, 0, "부채총계", filter_format)
 	worksheet_bs.write(19, 0, "자본금", filter_format2)
 	worksheet_bs.write(20, 0, "주식발행초과금", filter_format2)
-	worksheet_bs.write(21, 0, "이익잉여금", filter_format2)
-	worksheet_bs.write(22, 0, "자본총계", filter_format)
+	worksheet_bs.write(21, 0, "자본잉여금", filter_format2)
+	worksheet_bs.write(22, 0, "이익잉여금", filter_format2)
+	worksheet_bs.write(23, 0, "자본총계", filter_format)
 	
 	for k in range(len(balance_sheet_list)):
 		if balance_sheet_list[k]['asset_current_sub1'] != "FINDING LINE NUMBER ERROR":
@@ -396,8 +401,9 @@ def write_excel_file(workbook_name, dart_post_list, cashflow_list, balance_sheet
 			worksheet_bs.write(18, w, balance_sheet_list[k]['liability_sum']				, num2_format)
 			worksheet_bs.write(19, w, balance_sheet_list[k]['equity']						, num2_format)
 			worksheet_bs.write(20, w, balance_sheet_list[k]['equity_sub1']					, num2_format)
-			worksheet_bs.write(21, w, balance_sheet_list[k]['equity_sub2']					, num2_format)
-			worksheet_bs.write(22, w, balance_sheet_list[k]['equity_sum']					, num2_format)
+			worksheet_bs.write(21, w, balance_sheet_list[k]['equity_sub3']					, num2_format)
+			worksheet_bs.write(22, w, balance_sheet_list[k]['equity_sub2']					, num2_format)
+			worksheet_bs.write(23, w, balance_sheet_list[k]['equity_sum']					, num2_format)
 			
 			if prev_year != balance_sheet_list[k]['year']:
 				j = j+1
@@ -416,21 +422,23 @@ def write_excel_file(workbook_name, dart_post_list, cashflow_list, balance_sheet
 	
 	worksheet_income.set_column('A:A', 30)
 	worksheet_income.write(0, 0, "결산년도", filter_format)
-	worksheet_income.write(1, 0, "매출액(영업수익)", filter_format)
-	worksheet_income.write(2, 0, "매출원가(영업비용)", filter_format2)
+	worksheet_income.write(1, 0, "매출액", filter_format)
+	worksheet_income.write(2, 0, "매출원가", filter_format2)
 	worksheet_income.write(3, 0, "매출총이익", filter_format2)
 	worksheet_income.write(4, 0, "판매비와관리비", filter_format2)
-	worksheet_income.write(5, 0, "영업이익", filter_format)
-	worksheet_income.write(6, 0, "기타수익", filter_format2)
-	worksheet_income.write(7, 0, "기타비용", filter_format2)
-	worksheet_income.write(8, 0, "금융수익", filter_format2)
-	worksheet_income.write(9, 0, "금융비용", filter_format2)
-	worksheet_income.write(10, 0, "영업외수익", filter_format2)
-	worksheet_income.write(11, 0, "영업외비용", filter_format2)
-	worksheet_income.write(12, 0, "법인세비용차감전순이익", filter_format)
-	worksheet_income.write(13, 0, "법인세비용", filter_format2)
-	worksheet_income.write(14, 0, "당기순이익", filter_format)
-	worksheet_income.write(15, 0, "기본주당이익", filter_format)
+	worksheet_income.write(5, 0, "영업수익", filter_format)
+	worksheet_income.write(6, 0, "영업비용", filter_format2)
+	worksheet_income.write(7, 0, "영업이익", filter_format)
+	worksheet_income.write(8, 0, "기타수익", filter_format2)
+	worksheet_income.write(9, 0, "기타비용", filter_format2)
+	worksheet_income.write(10, 0, "금융수익", filter_format2)
+	worksheet_income.write(11, 0, "금융비용", filter_format2)
+	worksheet_income.write(12, 0, "영업외수익", filter_format2)
+	worksheet_income.write(13, 0, "영업외비용", filter_format2)
+	worksheet_income.write(14, 0, "법인세비용차감전순이익", filter_format)
+	worksheet_income.write(15, 0, "법인세비용", filter_format2)
+	worksheet_income.write(16, 0, "당기순이익", filter_format)
+	#worksheet_income.write(17, 0, "기본주당이익", filter_format)
 
 	for k in range(len(income_statement_list)):
 		if income_statement_list[k]['sales_sub1'] != "FINDING LINE NUMBER ERROR":
@@ -451,17 +459,19 @@ def write_excel_file(workbook_name, dart_post_list, cashflow_list, balance_sheet
 			worksheet_income.write(2, w, income_statement_list[k] ['sales_sub1']		, num2_format)
 			worksheet_income.write(3, w, income_statement_list[k] ['sales_sub2']		, num2_format)
 			worksheet_income.write(4, w, income_statement_list[k] ['sales_sub3']		, num2_format)
-			worksheet_income.write(5, w, income_statement_list[k] ['op_income']			, num2_format)
-			worksheet_income.write(6, w, income_statement_list[k] ['op_income_sub1']	, num2_format)
-			worksheet_income.write(7, w, income_statement_list[k] ['op_income_sub2']	, num2_format)
-			worksheet_income.write(8, w, income_statement_list[k] ['op_income_sub3']	, num2_format)
-			worksheet_income.write(9, w, income_statement_list[k] ['op_income_sub4']	, num2_format)
-			worksheet_income.write(10, w, income_statement_list[k]['op_income_sub6']	, num2_format)
-			worksheet_income.write(11, w, income_statement_list[k]['op_income_sub7']	, num2_format)
-			worksheet_income.write(12, w, income_statement_list[k]['op_income_sub5']	, num2_format)
-			worksheet_income.write(13, w, income_statement_list[k]['tax']				, num2_format)
-			worksheet_income.write(14, w, income_statement_list[k]['net_income']		, num2_format)
-			worksheet_income.write(15, w, income_statement_list[k]['eps']				, num2_format)
+			worksheet_income.write(5, w, income_statement_list[k] ['sales2']			, num2_format)
+			worksheet_income.write(6, w, income_statement_list[k] ['sales2_sub1']		, num2_format)
+			worksheet_income.write(7, w, income_statement_list[k] ['op_income']			, num2_format)
+			worksheet_income.write(8, w, income_statement_list[k] ['op_income_sub1']	, num2_format)
+			worksheet_income.write(9, w, income_statement_list[k] ['op_income_sub2']	, num2_format)
+			worksheet_income.write(10, w, income_statement_list[k] ['op_income_sub3']	, num2_format)
+			worksheet_income.write(11, w, income_statement_list[k] ['op_income_sub4']	, num2_format)
+			worksheet_income.write(12, w, income_statement_list[k]['op_income_sub6']	, num2_format)
+			worksheet_income.write(13, w, income_statement_list[k]['op_income_sub7']	, num2_format)
+			worksheet_income.write(14, w, income_statement_list[k]['op_income_sub5']	, num2_format)
+			worksheet_income.write(15, w, income_statement_list[k]['tax']				, num2_format)
+			worksheet_income.write(16, w, income_statement_list[k]['net_income']		, num2_format)
+			#worksheet_income.write(17, w, income_statement_list[k]['eps']				, num2_format)
 			
 			if prev_year != income_statement_list[k]['year']:
 				j = j+1
@@ -575,7 +585,7 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 	re_asset_current_sub1			=	re.compile("현[ \s]*금[ \s]*및[ \s]*현[ \s]*금[ \s]*((성[ \s]*자[ \s]*산)|(등[ \s]*가[ \s]*물))")
 	re_asset_current_sub2			=	re.compile("매[ \s]*출[ \s]*채[ \s]*권")
 	re_asset_current_sub3			=	re.compile("재[ \s]*고[ \s]*자[ \s]*산")
-	re_asset_non_current			=	re.compile("비[ \s]*유[ \s]*동[ \s]*자[ \s]*산")
+	re_asset_non_current			=	re.compile("비[ \s]*유[ \s]*동[ \s]*자[ \s]*산|고[ \s]*정[ \s]*자[ \s]*산")
 	re_asset_non_current_sub1		=	re.compile("유[ \s]*형[ \s]*자[ \s]*산")
 	re_asset_non_current_sub2		=	re.compile("무[ \s]*형[ \s]*자[ \s]*산")
 	re_asset_sum					=	re.compile("자[ \s]*산[ \s]*총[ \s]*계")
@@ -583,7 +593,7 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 	re_liability_current_sub1		=	re.compile("매[ \s]*입[ \s]*채[ \s]*무[ \s]*")
 	re_liability_current_sub2		=	re.compile("단[ \s]*기[ \s]*차[ \s]*입[ \s]*금")
 	re_liability_current_sub3		=	re.compile("^미[ \s]*지[ \s]*급[ \s]*금[ \s]*")
-	re_liability_non_current		=	re.compile("비[ \s]*유[ \s]*동[ \s]*부[ \s]*채")
+	re_liability_non_current		=	re.compile("비[ \s]*유[ \s]*동[ \s]*부[ \s]*채|고[ \s]*정[ \s]*부[ \s]*채")
 	re_liability_non_current_sub1	=	re.compile("사[ \s]*채[ \s]*")
 	re_liability_non_current_sub2	=	re.compile("장[ \s]*기[ \s]*차[ \s]*입[ \s]*금")
 	re_liability_non_current_sub3	=	re.compile("장[ \s]*기[ \s]*미[ \s]*지[ \s]*급[ \s]*금")
@@ -591,6 +601,7 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 	re_liability_sum				=	re.compile("^부[ \s]*채[ \s]*총[ \s]*계|\.[ \s]*부[ \s]*채[ \s]*총[ \s]*계")
 	re_equity						=	re.compile("자[ \s]*본[ \s]*금")
 	re_equity_sub1					=	re.compile("주[ \s]*식[ \s]*발[ \s]*행[ \s]*초[ \s]*과[ \s]*금")
+	re_equity_sub3					=	re.compile("자[ \s]*본[ \s]*잉[ \s]*여[ \s]*금")
 	re_equity_sub2					=	re.compile("이[ \s]*익[ \s]*잉[ \s]*여[ \s]*금")
 	re_equity_sum					=	re.compile("^자[ \s]*본[ \s]*총[ \s]*계|\.[ \s]*자[ \s]*본[ \s]*총[ \s]*계")
 
@@ -614,6 +625,7 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 	re_asset_list.append(re_liability_sum)
 	re_asset_list.append(re_equity)
 	re_asset_list.append(re_equity_sub1)
+	re_asset_list.append(re_equity_sub3)
 	re_asset_list.append(re_equity_sub2)		
 	re_asset_list.append(re_equity_sum)
 
@@ -639,6 +651,7 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 	balance_sheet_sub_list["liability_sum"]					=	0.0
 	balance_sheet_sub_list["equity"]						=	0.0
 	balance_sheet_sub_list["equity_sub1"]					=	0.0
+	balance_sheet_sub_list["equity_sub3"]					=	0.0
 	balance_sheet_sub_list["equity_sub2"]					=	0.0
 	balance_sheet_sub_list["equity_sum"]					=	0.0
 
@@ -664,6 +677,7 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 	balance_sheet_key_list.append("liability_sum")				
 	balance_sheet_key_list.append("equity")						
 	balance_sheet_key_list.append("equity_sub1")				
+	balance_sheet_key_list.append("equity_sub3")				
 	balance_sheet_key_list.append("equity_sub2")				
 	balance_sheet_key_list.append("equity_sum")					
 	
@@ -1024,10 +1038,12 @@ def scrape_income_statement(income_table, year, unit, mode):
 	re_income_list = []
 	
 	# Regular expression
-	re_sales			=	re.compile("매[ \s]*출[ \s]*액|영[ \s]*업[ \s]*수[ \s]*익")
-	re_sales_sub1		= 	re.compile("매[ \s]*출[ \s]*원[ \s]*가|영[ \s]*업[ \s]*비[ \s]*용")
+	re_sales			=	re.compile("매[ \s]*출[ \s]*액")
+	re_sales_sub1		= 	re.compile("매[ \s]*출[ \s]*원[ \s]*가")
 	re_sales_sub2		= 	re.compile("매[ \s]*출[ \s]*총[ \s]*이[ \s]*익")
 	re_sales_sub3		= 	re.compile("판[ \s]*매[ \s]*비[ \s]*와[ \s]*관[ \s]*리[ \s]*비")
+	re_sales2			=	re.compile("^영[ \s]*업[ \s]*수[ \s]*익|\.[ \s]*영[ \s]*업[ \s]*수[ \s]*익")
+	re_sales2_sub1		= 	re.compile("^영[ \s]*업[ \s]*비[ \s]*용|\.[ \s]*영[ \s]*업[ \s]*비[ \s]*용")
 	re_op_income		= 	re.compile("^영[ \s]*업[ \s]*이[ \s]*익|\.[ \s]*영[ \s]*업[ \s]*이[ \s]*익")
 	re_op_income_sub1	= 	re.compile("기[ \s]*타[ \s]*수[ \s]*익")
 	re_op_income_sub2	= 	re.compile("기[ \s]*타[ \s]*비[ \s]*용")
@@ -1044,6 +1060,8 @@ def scrape_income_statement(income_table, year, unit, mode):
 	re_income_list.append(re_sales_sub1)		 	
 	re_income_list.append(re_sales_sub2)		 	
 	re_income_list.append(re_sales_sub3)		 	
+	re_income_list.append(re_sales2)	
+	re_income_list.append(re_sales2_sub1)		 	
 	re_income_list.append(re_op_income)		 	
 	re_income_list.append(re_op_income_sub1)	 	
 	re_income_list.append(re_op_income_sub2)	 	
@@ -1061,6 +1079,8 @@ def scrape_income_statement(income_table, year, unit, mode):
 	income_statement_sub_list["sales_sub1"]			=	0.0
 	income_statement_sub_list["sales_sub2"]			=	0.0
 	income_statement_sub_list["sales_sub3"]			=	0.0
+	income_statement_sub_list["sales2"]				=	0.0
+	income_statement_sub_list["sales2_sub1"]		=	0.0
 	income_statement_sub_list["op_income"]		 	=	0.0
 	income_statement_sub_list["op_income_sub1"]		=	0.0
 	income_statement_sub_list["op_income_sub2"]		=	0.0
@@ -1079,6 +1099,8 @@ def scrape_income_statement(income_table, year, unit, mode):
 	income_statement_key_list.append("sales_sub1")		
 	income_statement_key_list.append("sales_sub2")		
 	income_statement_key_list.append("sales_sub3")		
+	income_statement_key_list.append("sales2")			
+	income_statement_key_list.append("sales2_sub1")		
 	income_statement_key_list.append("op_income")		
 	income_statement_key_list.append("op_income_sub1")	
 	income_statement_key_list.append("op_income_sub2")	
@@ -1200,7 +1222,7 @@ def main():
 -h or --help            :  Show help messages
 
 <Example>
->> python dart_financial_statement.py -m 1 -c S-Oil
+>> python dart_financial_statement.py -c S-Oil
 ================================================================================
 					"""
 			print(help_msg)
@@ -1539,6 +1561,7 @@ def main():
 			balance_sheet_sub_list["liability_sum"]					=	0.0
 			balance_sheet_sub_list["equity"]						=	0.0
 			balance_sheet_sub_list["equity_sub1"]					=	0.0
+			balance_sheet_sub_list["equity_sub3"]					=	0.0
 			balance_sheet_sub_list["equity_sub2"]					=	0.0
 			balance_sheet_sub_list["equity_sum"]					=	0.0
 					
@@ -1548,6 +1571,8 @@ def main():
 			income_statement_sub_list["sales_sub1"]			=	"FINDING LINE NUMBER ERROR"
 			income_statement_sub_list["sales_sub2"]			=	0.0
 			income_statement_sub_list["sales_sub3"]			=	0.0
+			income_statement_sub_list["sales2"]				=	0.0
+			income_statement_sub_list["sales2_sub1"]		=	0.0
 			income_statement_sub_list["op_income"]		 	=	0.0
 			income_statement_sub_list["op_income_sub1"]		=	0.0
 			income_statement_sub_list["op_income_sub2"]		=	0.0
@@ -1906,6 +1931,7 @@ def main():
 					balance_sheet_sub_list["liability_sum"]					=	0.0
 					balance_sheet_sub_list["equity"]						=	0.0
 					balance_sheet_sub_list["equity_sub1"]					=	0.0
+					balance_sheet_sub_list["equity_sub3"]					=	0.0
 					balance_sheet_sub_list["equity_sub2"]					=	0.0
 					balance_sheet_sub_list["equity_sum"]					=	0.0
 
@@ -1915,6 +1941,8 @@ def main():
 					income_statement_sub_list["sales_sub1"]			=	"FINDING LINE NUMBER ERROR"
 					income_statement_sub_list["sales_sub2"]			=	0.0
 					income_statement_sub_list["sales_sub3"]			=	0.0
+					income_statement_sub_list["sales2"]				=	0.0
+					income_statement_sub_list["sales2_sub1"]		=	0.0
 					income_statement_sub_list["op_income"]		 	=	0.0
 					income_statement_sub_list["op_income_sub1"]		=	0.0
 					income_statement_sub_list["op_income_sub2"]		=	0.0
