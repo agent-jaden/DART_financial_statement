@@ -35,6 +35,7 @@ def draw_cashflow_figure(income_list, income_list2, year_list, op_cashflow_list,
 	ax1.plot(year_list, div_list, label="Dividends", color='g', marker='D')
 	#ax1.plot(year_list, cash_equivalents_list, label="Cash & Cash Equivalents", color='magenta', marker='D', linestyle ='dashed')
 	ax1.set_xlabel("YEAR")
+	ax1.set_xticks(year_list)
 	plt.legend(loc=2)
 
 	ax2 = ax1.twinx().twiny()
@@ -55,6 +56,7 @@ def draw_corp_history(year_list, asset_sum_list, liability_sum_list, equity_sum_
 	ax1.plot(year_list, liability_sum_list, label="Liability", color='b', marker='D')
 	ax1.plot(year_list, sales_list, label="Sales", color='r', marker='D')
 	ax1.set_xlabel("YEAR")
+	ax1.set_xticks(year_list)
 	plt.legend(loc=2)
 	
 	ax2 = ax1.twinx().twiny()
@@ -174,7 +176,7 @@ def write_excel_file(workbook_name, dart_post_list, cashflow_list, balance_sheet
 		worksheet_result.write(k+1,33, cashflow_list[k]	['end_cash']				, num2_format)
 
 	cashflow_list.reverse() 
-	worksheet_cashflow = workbook.add_worksheet('cashflow')
+	worksheet_cashflow = workbook.add_worksheet('Cashflow Statement')
 	
 	worksheet_cashflow.set_column('A:A', 30)
 	worksheet_cashflow.write(0, 0, "결산년도", filter_format)
@@ -583,15 +585,15 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 
 	re_asset_list = []
 
-	re_asset_current				=	re.compile("^유[ \s]*동[ \s]*자[ \s]*산|\.[ \s]*유[ \s]*동[ \s]*자[ \s]*산")
+	re_asset_current				=	re.compile("^유[ \s]*동[ \s]*자[ \s]*산([ \s]*합[ \s]*계)*|\.[ \s]*유[ \s]*동[ \s]*자[ \s]*산([ \s]*합[ \s]*계)*")
 	re_asset_current_sub1			=	re.compile("현[ \s]*금[ \s]*및[ \s]*현[ \s]*금[ \s]*((성[ \s]*자[ \s]*산)|(등[ \s]*가[ \s]*물))")
 	re_asset_current_sub2			=	re.compile("매[ \s]*출[ \s]*채[ \s]*권")
 	re_asset_current_sub3			=	re.compile("재[ \s]*고[ \s]*자[ \s]*산")
-	re_asset_non_current			=	re.compile("비[ \s]*유[ \s]*동[ \s]*자[ \s]*산|고[ \s]*정[ \s]*자[ \s]*산")
+	re_asset_non_current			=	re.compile("비[ \s]*유[ \s]*동[ \s]*자[ \s]*산|고[ \s]*정[ \s]*자[ \s]*산([ \s]*합[ \s]*계)*")
 	re_asset_non_current_sub1		=	re.compile("유[ \s]*형[ \s]*자[ \s]*산")
 	re_asset_non_current_sub2		=	re.compile("무[ \s]*형[ \s]*자[ \s]*산")
-	re_asset_sum					=	re.compile("자[ \s]*산[ \s]*총[ \s]*계")
-	re_liability_current			=	re.compile("^유[ \s]*동[ \s]*부[ \s]*채|\.[ \s]*유[ \s]*동[ \s]*부[ \s]*채")
+	re_asset_sum					=	re.compile("자[ \s]*산[ \s]*총[ \s]*계([ \s]*합[ \s]*계)*")
+	re_liability_current			=	re.compile("^유[ \s]*동[ \s]*부[ \s]*채([ \s]*합[ \s]*계)*|\.[ \s]*유[ \s]*동[ \s]*부[ \s]*채([ \s]*합[ \s]*계)*")
 	re_liability_current_sub1		=	re.compile("매[ \s]*입[ \s]*채[ \s]*무[ \s]*")
 	re_liability_current_sub2		=	re.compile("단[ \s]*기[ \s]*차[ \s]*입[ \s]*금")
 	re_liability_current_sub3		=	re.compile("^미[ \s]*지[ \s]*급[ \s]*금[ \s]*")
@@ -600,12 +602,12 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 	re_liability_non_current_sub2	=	re.compile("장[ \s]*기[ \s]*차[ \s]*입[ \s]*금")
 	re_liability_non_current_sub3	=	re.compile("장[ \s]*기[ \s]*미[ \s]*지[ \s]*급[ \s]*금")
 	re_liability_non_current_sub4	=	re.compile("이[ \s]*연[ \s]*법[ \s]*인[ \s]*세[ \s]*부[ \s]*채")
-	re_liability_sum				=	re.compile("^부[ \s]*채[ \s]*총[ \s]*계|\.[ \s]*부[ \s]*채[ \s]*총[ \s]*계")
+	re_liability_sum				=	re.compile("^부[ \s]*채[ \s]*총[ \s]*계([ \s]*합[ \s]*계)*|\.[ \s]*부[ \s]*채[ \s]*총[ \s]*계([ \s]*합[ \s]*계)*")
 	re_equity						=	re.compile("자[ \s]*본[ \s]*금")
 	re_equity_sub1					=	re.compile("주[ \s]*식[ \s]*발[ \s]*행[ \s]*초[ \s]*과[ \s]*금")
 	re_equity_sub3					=	re.compile("자[ \s]*본[ \s]*잉[ \s]*여[ \s]*금")
 	re_equity_sub2					=	re.compile("이[ \s]*익[ \s]*잉[ \s]*여[ \s]*금")
-	re_equity_sum					=	re.compile("^자[ \s]*본[ \s]*총[ \s]*계|\.[ \s]*자[ \s]*본[ \s]*총[ \s]*계")
+	re_equity_sum					=	re.compile("^자[ \s]*본[ \s]*총[ \s]*계([ \s]*합[ \s]*계)*|\.[ \s]*자[ \s]*본[ \s]*총[ \s]*계([ \s]*합[ \s]*계)*")
 
 	re_asset_list.append(re_asset_current)
 	re_asset_list.append(re_asset_current_sub1)
@@ -708,7 +710,7 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 								if (tds[1].text.strip() != '') and (tds[1].text.strip() != '-'):
 									value = find_value(tds[1].text.strip(), unit)
 									break # for i in len(re_asset_list)
-					if value != 0.0:
+					if value != 0.0 and balance_sheet_sub_list[balance_sheet_key_list[i]] == 0.0:
 						balance_sheet_sub_list[balance_sheet_key_list[i]] = value
 			except Exception as e:
 				print("NET INCOME PARSING ERROR in Balance sheet")
@@ -774,7 +776,7 @@ def scrape_balance_sheet(balance_sheet_table, year, unit):
 							if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
 								value = find_value(data_col[index_cnt], unit)
 								break
-				if value != 0.0:
+				if value != 0.0 and balance_sheet_sub_list[balance_sheet_key_list[i]] == 0.0:
 					balance_sheet_sub_list[balance_sheet_key_list[i]] = value
 			except Exception as e:
 				print("PARSING ERROR in BALANCE SHEET")
@@ -980,7 +982,7 @@ def scrape_cashflows(cashflow_table, year, unit):
 								if (tds[1].text.strip() != '') and (tds[1].text.strip() != '-'):
 									value = find_value(tds[1].text.strip(), unit)
 									break # for i in len(re_cashflow_list)
-					if value != 0.0:
+					if value != 0.0 and cashflow_sub_list[cashflow_key_list[i]] == 0.0:
 						cashflow_sub_list[cashflow_key_list[i]] = value
 					# No matching case
 					else:
@@ -1048,7 +1050,7 @@ def scrape_cashflows(cashflow_table, year, unit):
 							if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
 								value = find_value(data_col[index_cnt], unit)
 								break
-				if value != 0.0:
+				if value != 0.0 and cashflow_sub_list[cashflow_key_list[i]] == 0.0:
 					cashflow_sub_list[cashflow_key_list[i]] = value
 			except Exception as e:
 				print("PARSING ERROR")
@@ -1093,7 +1095,7 @@ def scrape_income_statement(income_table, year, unit, mode):
 	re_op_income_sub4	= 	re.compile("금[ \s]*융[ \s]*비[ \s]*용")
 	re_op_income_sub6	= 	re.compile("영[ \s]*업[ \s]*외[ \s]*수[ \s]*익")
 	re_op_income_sub7	= 	re.compile("영[ \s]*업[ \s]*외[ \s]*비[ \s]*용")
-	re_op_income_sub5	= 	re.compile("법[ \s]*인[ \s]*세[ \s]*비[ \s]*용[ \s]*차[ \s]*감[ \s]*전[ \s]*순[ \s]*이[ \s]*익|법[ \s]*인[ \s]*세[ \s]*차[ \s]*감[ \s]*전[ \s]*계[ \s]*속[ \s]*영[ \s]*업[ \s]*순[ \s]*이[ \s]*익|법인세[ \s]*차감전[ \s]*순이익|법인세차감전계속영업이익|법인세비용차감전이익|법인세비용차감전계속영업[순]*이익|법인세비용차감전당기순이익|법인세비용차감전순이익|법인세비용차감전[ \s]*계속사업이익|법인세비용차감전순손익")
+	re_op_income_sub5	= 	re.compile("법[ \s]*인[ \s]*세[ \s]*비[ \s]*용[ \s]*차[ \s]*감[ \s]*전[ \s]*순[ \s]*((이[ \s]*익)|(손[ \s]*실))|법[ \s]*인[ \s]*세[ \s]*차[ \s]*감[ \s]*전[ \s]*계[ \s]*속[ \s]*영[ \s]*업[ \s]*순[ \s]*이[ \s]*익|법인세[ \s]*차감전[ \s]*순이익|법인세차감전계속영업이익|법인세비용차감전이익|법인세비용차감전계속영업[순]*이익|법인세비용차감전당기순이익|법인세비용차감전순이익|법인세비용차감전[ \s]*계속사업이익|법인세비용차감전순손익")
 	re_tax				=	re.compile("법[ \s]*인[ \s]*세[ \s]*비[ \s]*용")
 	re_net_income		=	re.compile("^순[ \s]*이[ \s]*익|^당[ \s]*기[ \s]*순[ \s]*이[ \s]*익|^연[ ]*결[ ]*[총 ]*당[ ]*기[ ]*순[ ]*이[ ]*익|지배기업의 소유주에게 귀속되는 당기순이익|분기순이익|당\(분\)기순이익|\.[ \s]*당[ \s]*기[ \s]*순[ \s]*이[ \s]*익|당분기연결순이익")
 	re_eps				=	re.compile("기[ \s]*본[ \s]*주[ \s]*당[ \s]*((수[ \s]*익)|([순 \s]*이[ \s]*익))")
@@ -1189,7 +1191,7 @@ def scrape_income_statement(income_table, year, unit, mode):
 									if (tds[2].text.strip() != '') and (tds[2].text.strip() != '-'):
 										value = find_value(tds[1].text.strip(), unit)
 										break # for i in len(re_income_list)
-					if value != 0.0:
+					if value != 0.0 and income_statement_sub_list[income_statement_key_list[i]] == 0.0:
 						income_statement_sub_list[income_statement_key_list[i]] = value
 			except Exception as e:
 				print("NET INCOME PARSING ERROR in Income statement")
@@ -1252,7 +1254,7 @@ def scrape_income_statement(income_table, year, unit, mode):
 							if (data_col[index_cnt].strip() != '') and (data_col[index_cnt].strip() != '-'):
 								value = find_value(data_col[index_cnt], unit)
 								break
-				if value != 0.0:
+				if value != 0.0 and income_statement_sub_list[income_statement_key_list[i]] == 0.0:
 					income_statement_sub_list[income_statement_key_list[i]] = value
 			except Exception as e:
 				print("PARSING ERROR in INCOME STATEMENT")
@@ -1294,7 +1296,7 @@ def main():
 		elif option == "--output" or option == "-o":
 			workbook_name = argument + ".xlsx"
 
-	re_income_find = re.compile("법[ \s]*인[ \s]*세[ \s]*비[ \s]*용(\(이익\))*[ \s]*차[ \s]*감[ \s]*전[ \s]*순[ \s]*이[ \s]*익|법[ \s]*인[ \s]*세[ \s]*차[ \s]*감[ \s]*전[ \s]*계[ \s]*속[ \s]*영[ \s]*업[ \s]*순[ \s]*이[ \s]*익|법인세[ \s]*차감전[ \s]*순이익|법인세차감전계속영업이익|법인세비용차감전이익|법인세비용차감전계속영업[순]*이익|법인세비용차감전당기순이익|법인세(비용차감|손익가감)전순이익|법인세비용차감전[ \s]*계속사업이익|법인세비용차감전순손익")
+	re_income_find = re.compile("법[ \s]*인[ \s]*세[ \s]*비[ \s]*용(\(이익\))*[ \s]*차[ \s]*감[ \s]*전[ \s]*순[ \s]*((이[ \s]*익)|(손[ \s]*실))|법[ \s]*인[ \s]*세[ \s]*차[ \s]*감[ \s]*전[ \s]*계[ \s]*속[ \s]*영[ \s]*업[ \s]*순[ \s]*이[ \s]*익|법인세[ \s]*차감전[ \s]*순이익|법인세차감전계속영업이익|법인세비용차감전이익|법인세비용차감전계속영업[순]*이익|법인세비용차감전당기순이익|법인세(비용차감|손익가감)전순이익|법인세비용차감전[ \s]*계속사업이익|법인세비용차감전순손익")
 	re_cashflow_find = re.compile("영업활동[ \s]*현금[ \s]*흐름|영업활동으로[ \s]*인한[ \s]*[순]*현금[ \s]*흐름|영업활동으로부터의[ \s]*현금흐름|영업활동으로 인한 자산부채의 변동")
 	re_balance_sheet_find = re.compile("현[ \s]*금[ \s]*및[ \s]*현[ \s]*금[ \s]*((성[ \s]*자[ \s]*산)|(등[ \s]*가[ \s]*물))")
 
@@ -1340,7 +1342,7 @@ def main():
 	income_statement_list = []
 	
 	year = 2017
-	start_day = datetime(2004,1,1)
+	start_day = datetime(2005,1,1)
 	#start_day = datetime(2000,1,1)
 	#end_day = datetime(2002,11,15)
 	end_day = datetime(2017,11,15)
